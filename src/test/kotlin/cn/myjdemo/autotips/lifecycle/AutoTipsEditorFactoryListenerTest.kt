@@ -112,8 +112,8 @@ class AutoTipsEditorFactoryListenerTest : BasePlatformTestCase() {
         // 在实际IDE中，输入 "(" 后会自动插入 ")"
         // 这里需要手动模拟
         val editor = myFixture.editor
-        val offset = editor.caretModel.offset
-        myFixture.editor.document.insertString(offset, ")")
+        // 模拟IDE自动补全右括号，使用myFixture.type避免直接写文档
+        myFixture.type(")")
         
         // 验证文档已更新
         val text = myFixture.editor.document.text

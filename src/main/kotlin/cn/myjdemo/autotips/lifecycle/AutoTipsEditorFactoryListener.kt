@@ -24,7 +24,7 @@ class AutoTipsEditorFactoryListener : EditorFactoryListener {
     
     companion object {
         private val LOG = Logger.getInstance(AutoTipsEditorFactoryListener::class.java)
-        private val DOCUMENT_LISTENER_KEY = Key.create<DocumentListener>("AutoTipsDocumentListener")
+        private val DOCUMENT_LISTENER_KEY = Key.create<DocumentListener>("AutoTipsEditorFactoryDocumentListener")
         private val LAST_TRIGGER_INFO_KEY = Key.create<Pair<Int, Long>>("AutoTipsLastTriggerInfo") // offset, timestamp
         private const val METHOD_CALL_COMPLETION_CHAR = ')'
         private const val DUPLICATE_TRIGGER_THRESHOLD_MS = 500L // 500毫秒内的重复触发视为重复
@@ -95,7 +95,7 @@ class AutoTipsEditorFactoryListener : EditorFactoryListener {
             val project = editor.project ?: return
             
             // 检查插件是否启用
-            val configService = service<ConfigurationService>()
+            val configService = com.intellij.openapi.application.ApplicationManager.getApplication().service<ConfigurationService>()
             if (!configService.isPluginEnabled()) {
                 return
             }
@@ -128,7 +128,7 @@ class AutoTipsEditorFactoryListener : EditorFactoryListener {
                 
                 // 触发提示检测
                 handleMethodCallCompletion(editor, project, parenOffset)
-            }, com.intellij.openapi.application.ModalityState.NON_MODAL)
+            }, com.intellij.openapi.application.ModalityState.defaultModalityState())
         } catch (e: Exception) {
             LOG.warn("Error handling document change", e)
         }
@@ -167,21 +167,27 @@ class AutoTipsEditorFactoryListener : EditorFactoryListener {
                         try {
                             // 获取服务实例
                             val callDetectionService = project.service<CallDetectionService>()
-                            val annotationParser = project.service<AnnotationParser>()
+                            val configService = ApplicationManager.getApplication().service<ConfigurationService>()
                             val tipDisplayService = project.service<TipDisplayService>()
-                            
+
                             // 检测方法调用
                             val methodCallInfo = callDetectionService.detectMethodCall(editor, offset)
-                            
+
                             if (methodCallInfo == null) {
                                 LOG.debug("No method call detected at offset $offset (document listener)")
                                 return@runReadAction
                             }
-                            
+
                             LOG.debug("Detected method call from document listener: ${methodCallInfo.methodName}")
-                            
-                            // 解析@tips注释
-                            val tipsContent = annotationParser.extractTipsContent(methodCallInfo.psiMethod)
+
+                            // 根据配置选择提取器（与 TipsTypedActionHandlerImpl 保持一致）
+                            val tipsContent = if (configService.isJavadocModeEnabled()) {
+                                val javadocExtractor = project.service<cn.myjdemo.autotips.service.JavadocExtractor>()
+                                javadocExtractor.extractJavadocFromMethod(methodCallInfo.psiMethod)
+                            } else {
+                                val annotationParser = project.service<AnnotationParser>()
+                                annotationParser.extractTipsContent(methodCallInfo.psiMethod)
+                            }
                             
                             if (tipsContent == null) {
                                 LOG.debug("No @tips annotation found for method: ${methodCallInfo.methodName}")
@@ -190,7 +196,7 @@ class AutoTipsEditorFactoryListener : EditorFactoryListener {
                             
                             LOG.debug("Found @tips content from document listener: ${tipsContent.content.take(50)}...")
                             
-                            // 在UI线程中显示提示
+                            // 在UI线程中显示提示，showTip创建Swing组件必须在EDT执行
                             ApplicationManager.getApplication().invokeLater {
                                 try {
                                     // 检查是否可以显示新提示
@@ -198,13 +204,10 @@ class AutoTipsEditorFactoryListener : EditorFactoryListener {
                                         LOG.debug("Cannot show new tip, current tip is still showing")
                                         return@invokeLater
                                     }
-                                    
-                                    // 显示提示
-                                    ApplicationManager.getApplication().runReadAction {
-                                        val position = editor.caretModel.logicalPosition
-                                        tipDisplayService.showTip(tipsContent, editor, position)
-                                    }
-                                    
+
+                                    val position = editor.caretModel.logicalPosition
+                                    tipDisplayService.showTip(tipsContent, editor, position)
+
                                     LOG.info("Successfully displayed tip from document listener for method: ${methodCallInfo.methodName}")
                                 } catch (e: Exception) {
                                     LOG.warn("Failed to display tip from document listener", e)

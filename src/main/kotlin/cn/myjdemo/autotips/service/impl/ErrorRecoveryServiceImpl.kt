@@ -195,9 +195,9 @@ class ErrorRecoveryServiceImpl : ErrorRecoveryService {
      */
     override fun logError(message: String, exception: Exception?) {
         if (exception != null) {
-            LOG.error(message, exception)
+            LOG.warn(message, exception)
         } else {
-            LOG.error(message)
+            LOG.warn(message)
         }
     }
     

@@ -41,7 +41,7 @@ class AutoCompletionDocumentListener(private val editor: Editor) : DocumentListe
             LOG.debug("Document changed: offset=${event.offset}, newFragment='${event.newFragment}', oldFragment='${event.oldFragment}'")
             
             // 检查插件是否启用
-            val configService = service<ConfigurationService>()
+            val configService = com.intellij.openapi.application.ApplicationManager.getApplication().service<ConfigurationService>()
             if (!configService.isPluginEnabled()) {
                 LOG.debug("Plugin is disabled")
                 return
@@ -139,21 +139,27 @@ class AutoCompletionDocumentListener(private val editor: Editor) : DocumentListe
                         try {
                             // 获取服务实例
                             val callDetectionService = project.service<CallDetectionService>()
-                            val annotationParser = project.service<AnnotationParser>()
+                            val configService = ApplicationManager.getApplication().service<ConfigurationService>()
                             val tipDisplayService = project.service<TipDisplayService>()
-                            
+
                             // 检测方法调用
                             val methodCallInfo = callDetectionService.detectMethodCall(editor, offset)
-                            
+
                             if (methodCallInfo == null) {
                                 LOG.debug("No method call detected at offset $offset")
                                 return@runReadAction
                             }
-                            
+
                             LOG.debug("Detected method call from auto-completion: ${methodCallInfo.methodName}")
-                            
-                            // 解析@tips注释
-                            val tipsContent = annotationParser.extractTipsContent(methodCallInfo.psiMethod)
+
+                            // 根据配置选择提取器（与 TipsTypedActionHandlerImpl 保持一致）
+                            val tipsContent = if (configService.isJavadocModeEnabled()) {
+                                val javadocExtractor = project.service<cn.myjdemo.autotips.service.JavadocExtractor>()
+                                javadocExtractor.extractJavadocFromMethod(methodCallInfo.psiMethod)
+                            } else {
+                                val annotationParser = project.service<AnnotationParser>()
+                                annotationParser.extractTipsContent(methodCallInfo.psiMethod)
+                            }
                             
                             if (tipsContent == null) {
                                 LOG.debug("No @tips annotation found for method: ${methodCallInfo.methodName}")
@@ -162,7 +168,7 @@ class AutoCompletionDocumentListener(private val editor: Editor) : DocumentListe
                             
                             LOG.debug("Found @tips content from auto-completion: ${tipsContent.content.take(50)}...")
                             
-                            // 在UI线程中显示提示
+                            // 在UI线程中显示提示，showTip创建Swing组件必须在EDT执行
                             ApplicationManager.getApplication().invokeLater {
                                 try {
                                     // 检查是否可以显示新提示
@@ -170,13 +176,10 @@ class AutoCompletionDocumentListener(private val editor: Editor) : DocumentListe
                                         LOG.debug("Cannot show new tip, current tip is still showing")
                                         return@invokeLater
                                     }
-                                    
-                                    // 显示提示
-                                    ApplicationManager.getApplication().runReadAction {
-                                        val position = editor.caretModel.logicalPosition
-                                        tipDisplayService.showTip(tipsContent, editor, position)
-                                    }
-                                    
+
+                                    val position = editor.caretModel.logicalPosition
+                                    tipDisplayService.showTip(tipsContent, editor, position)
+
                                     LOG.info("Successfully displayed tip from auto-completion for method: ${methodCallInfo.methodName}")
                                 } catch (e: Exception) {
                                     LOG.warn("Failed to display tip from auto-completion", e)

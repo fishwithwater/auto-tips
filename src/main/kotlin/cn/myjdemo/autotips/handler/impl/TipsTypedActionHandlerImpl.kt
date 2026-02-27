@@ -3,6 +3,7 @@ package cn.myjdemo.autotips.handler.impl
 import cn.myjdemo.autotips.handler.TipsTypedActionHandler
 import cn.myjdemo.autotips.service.CallDetectionService
 import cn.myjdemo.autotips.service.AnnotationParser
+import cn.myjdemo.autotips.service.JavadocExtractor
 import cn.myjdemo.autotips.service.TipDisplayService
 import cn.myjdemo.autotips.service.ConfigurationService
 import com.intellij.codeInsight.editorActions.TypedHandlerDelegate
@@ -77,8 +78,10 @@ class TipsTypedActionHandlerImpl : TypedHandlerDelegate(), TipsTypedActionHandle
             }
             
             // 检查插件是否启用
-            val configService = service<ConfigurationService>()
-            if (!configService.isPluginEnabled()) {
+            val configService = ApplicationManager.getApplication().service<ConfigurationService>()
+            val isEnabled = configService.isPluginEnabled()
+            LOG.debug("Plugin enabled check: $isEnabled")
+            if (!isEnabled) {
                 LOG.debug("Plugin is disabled, skipping tip detection")
                 return Result.CONTINUE
             }
@@ -164,10 +167,13 @@ class TipsTypedActionHandlerImpl : TypedHandlerDelegate(), TipsTypedActionHandle
      * 
      * 需求 4.1: 立即检查该方法是否有@tips标记
      * 需求 4.2: 在500毫秒内显示提示
+     * 需求 1.2, 1.3: 根据配置选择显示 @tips 或 Javadoc 内容
+     * 需求 3.1, 3.2, 3.3: 两种模式使用相同的显示服务和逻辑
+     * 需求 5.1, 5.2: 支持模式切换
      * 
      * 实现策略:
      * 1. 使用CallDetectionService检测方法调用
-     * 2. 使用AnnotationParser解析@tips注释
+     * 2. 根据配置选择使用AnnotationParser或JavadocExtractor
      * 3. 使用TipDisplayService显示提示
      * 4. 在后台线程执行以避免阻塞UI
      * 
@@ -192,8 +198,16 @@ class TipsTypedActionHandlerImpl : TypedHandlerDelegate(), TipsTypedActionHandle
                             
                             // 获取服务实例
                             val callDetectionService = project.service<CallDetectionService>()
-                            val annotationParser = project.service<AnnotationParser>()
+                            val configService = ApplicationManager.getApplication().service<ConfigurationService>()
                             val tipDisplayService = project.service<TipDisplayService>()
+                            
+                            // 调试：输出当前配置状态
+                            val currentConfig = configService.getCurrentConfiguration()
+                            LOG.info("=== Configuration Debug ===")
+                            LOG.info("Current configuration: enabled=${currentConfig.enabled}, javadocMode=${currentConfig.javadocModeEnabled}, style=${currentConfig.style}, duration=${currentConfig.displayDuration}")
+                            LOG.info("ConfigService class: ${configService::class.simpleName}")
+                            LOG.info("ConfigService instance: ${configService.hashCode()}")
+                            
                             val methodCallInfo = callDetectionService.detectMethodCall(editor, offset)
                             
                             if (methodCallInfo == null) {
@@ -203,18 +217,41 @@ class TipsTypedActionHandlerImpl : TypedHandlerDelegate(), TipsTypedActionHandle
                             
                             LOG.debug("Detected method call: ${methodCallInfo.methodName} in ${methodCallInfo.qualifiedClassName}")
                             
-                            // 2. 解析@tips注释
-                            val tipsContent = annotationParser.extractTipsContent(methodCallInfo.psiMethod)
+                            // 根据配置选择提取器
+                            // 需求 1.2, 1.3: 当复选框未勾选时显示 @tips，勾选时显示 Javadoc
+                            val isJavadocMode = configService.isJavadocModeEnabled()
+                            LOG.info("=== Mode Selection ===")
+                            LOG.info("Javadoc mode enabled: $isJavadocMode")
+                            LOG.info("Will use: ${if (isJavadocMode) "JavadocExtractor" else "AnnotationParser"}")
+                            
+                            val tipsContent = if (isJavadocMode) {
+                                // 使用 Javadoc 提取器
+                                LOG.info("Using Javadoc mode for method: ${methodCallInfo.methodName}")
+                                val javadocExtractor = project.service<JavadocExtractor>()
+                                LOG.info("JavadocExtractor class: ${javadocExtractor::class.simpleName}")
+                                val result = javadocExtractor.extractJavadocFromMethod(methodCallInfo.psiMethod)
+                                LOG.info("Javadoc extraction result: ${if (result != null) "SUCCESS (${result.content.length} chars)" else "NULL"}")
+                                result
+                            } else {
+                                // 使用现有的 @tips 解析器
+                                LOG.info("Using @tips mode for method: ${methodCallInfo.methodName}")
+                                val annotationParser = project.service<AnnotationParser>()
+                                LOG.info("AnnotationParser class: ${annotationParser::class.simpleName}")
+                                val result = annotationParser.extractTipsContent(methodCallInfo.psiMethod)
+                                LOG.info("Tips extraction result: ${if (result != null) "SUCCESS (${result.content.length} chars)" else "NULL"}")
+                                result
+                            }
                             
                             if (tipsContent == null) {
-                                LOG.debug("No @tips annotation found for method: ${methodCallInfo.methodName}")
+                                LOG.debug("No content found for method: ${methodCallInfo.methodName}")
                                 return@runReadAction
                             }
                             
-                            LOG.debug("Found @tips content: ${tipsContent.content.take(50)}...")
+                            LOG.debug("Found content: ${tipsContent.content.take(50)}...")
                             
                             // 3. 在UI线程中显示提示
                             // 需求 4.2: 在500毫秒内显示提示
+                            // 需求 3.1, 3.2, 3.3: 两种模式使用相同的显示服务和逻辑
                             ApplicationManager.getApplication().invokeLater {
                                 try {
                                     // 检查是否可以显示新提示（处理冲突）
@@ -222,13 +259,11 @@ class TipsTypedActionHandlerImpl : TypedHandlerDelegate(), TipsTypedActionHandle
                                         LOG.debug("Cannot show new tip, current tip is still showing")
                                         return@invokeLater
                                     }
-                                    
-                                    // 显示提示
-                                    ApplicationManager.getApplication().runReadAction {
-                                        val position = editor.caretModel.logicalPosition
-                                        tipDisplayService.showTip(tipsContent, editor, position)
-                                    }
-                                    
+
+                                    // 在EDT上直接读取位置并显示提示，showTip创建Swing组件必须在EDT执行
+                                    val position = editor.caretModel.logicalPosition
+                                    tipDisplayService.showTip(tipsContent, editor, position)
+
                                     LOG.info("Successfully displayed tip for method: ${methodCallInfo.methodName}")
                                 } catch (e: Exception) {
                                     LOG.warn("Failed to display tip", e)

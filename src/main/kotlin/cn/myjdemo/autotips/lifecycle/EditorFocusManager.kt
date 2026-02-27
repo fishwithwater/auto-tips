@@ -108,10 +108,10 @@ class EditorFocusManager(private val project: Project) : FileEditorManagerListen
     
     /**
      * 当文件被关闭时
-     * 
+     *
      * 需求 3.3: 自动隐藏提示
      * 同时移除文档监听器
-     * 
+     *
      * @param source 文件编辑器管理器
      */
     override fun fileClosed(source: FileEditorManager, file: com.intellij.openapi.vfs.VirtualFile) {
@@ -121,6 +121,19 @@ class EditorFocusManager(private val project: Project) : FileEditorManagerListen
             if (tipDisplayService.isCurrentlyShowing()) {
                 tipDisplayService.hideTip()
                 LOG.debug("Tip hidden due to file close")
+            }
+
+            // 移除该文件对应编辑器的文档监听器，防止内存泄漏
+            val editors = source.getEditors(file)
+            for (editor in editors) {
+                if (editor is TextEditor) {
+                    val listener = editor.editor.getUserData(DOCUMENT_LISTENER_KEY)
+                    if (listener != null) {
+                        editor.editor.document.removeDocumentListener(listener)
+                        editor.editor.putUserData(DOCUMENT_LISTENER_KEY, null)
+                        LOG.debug("Removed document listener on file close: ${editor.editor.document.hashCode()}")
+                    }
+                }
             }
         } catch (e: Exception) {
             LOG.warn("Failed to handle file close", e)
