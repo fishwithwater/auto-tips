@@ -29,7 +29,6 @@ public ResultSet executeQuery(String query) { ... }
 
 ```java
 ResultSet result = executeQuery("SELECT * FROM users");
-//                                                    ^ 触发提示
 ```
 
 Kotlin 同理：
@@ -53,7 +52,7 @@ sortArray(data)  // 输入 ) 时显示提示
 
 - 启用/禁用插件
 - 提示显示时长（默认 5000ms）
-- 提示样式（BALLOON / TOOLTIP / NOTIFICATION）
+- 提示样式（气泡 / 工具提示 / 通知）
 - 显示完整 Javadoc 而非仅 `@tips` 内容
 
 ## 许可证
