@@ -2,6 +2,7 @@ package cn.myjdemo.autotips.service.impl
 
 import cn.myjdemo.autotips.model.TipsContent
 import cn.myjdemo.autotips.service.CacheService
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
@@ -21,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLong
  * - 缓存统计信息
  * - 内存限制管理
  */
-class CacheServiceImpl : CacheService {
+class CacheServiceImpl : CacheService, Disposable {
     
     private val cache = ConcurrentHashMap<String, CacheEntry>()
     private val accessOrder = ConcurrentHashMap<String, Long>()
@@ -164,6 +165,10 @@ class CacheServiceImpl : CacheService {
         }
     }
     
+    override fun dispose() {
+        shutdown()
+    }
+
     /**
      * 关闭缓存服务，清理资源
      */

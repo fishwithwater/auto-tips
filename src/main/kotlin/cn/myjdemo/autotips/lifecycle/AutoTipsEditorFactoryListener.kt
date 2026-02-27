@@ -12,6 +12,7 @@ import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.editor.event.EditorFactoryEvent
 import com.intellij.openapi.editor.event.EditorFactoryListener
+import cn.myjdemo.autotips.handler.TriggerDeduplicator
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiDocumentManager
 
@@ -25,36 +26,7 @@ class AutoTipsEditorFactoryListener : EditorFactoryListener {
     companion object {
         private val LOG = Logger.getInstance(AutoTipsEditorFactoryListener::class.java)
         private val DOCUMENT_LISTENER_KEY = Key.create<DocumentListener>("AutoTipsEditorFactoryDocumentListener")
-        private val LAST_TRIGGER_INFO_KEY = Key.create<Pair<Int, Long>>("AutoTipsLastTriggerInfo") // offset, timestamp
         private const val METHOD_CALL_COMPLETION_CHAR = ')'
-        private const val DUPLICATE_TRIGGER_THRESHOLD_MS = 500L // 500毫秒内的重复触发视为重复
-    }
-    
-    /**
-     * 检查是否应该触发（避免重复触发）
-     * 
-     * @param editor 编辑器
-     * @param offset 右括号位置
-     * @return true 如果应该触发，false 如果是重复触发
-     */
-    private fun shouldTrigger(editor: Editor, offset: Int): Boolean {
-        val now = System.currentTimeMillis()
-        val lastTrigger = editor.getUserData(LAST_TRIGGER_INFO_KEY)
-        
-        if (lastTrigger != null) {
-            val (lastOffset, lastTime) = lastTrigger
-            val timeDiff = now - lastTime
-            
-            // 如果在阈值时间内，且位置相同或相邻（差1个字符），视为重复触发
-            if (timeDiff < DUPLICATE_TRIGGER_THRESHOLD_MS && Math.abs(offset - lastOffset) <= 1) {
-                LOG.debug("Duplicate trigger detected at offset $offset (DocumentListener), skipping")
-                return false
-            }
-        }
-        
-        // 记录本次触发
-        editor.putUserData(LAST_TRIGGER_INFO_KEY, Pair(offset, now))
-        return true
     }
     
     /**
@@ -78,7 +50,6 @@ class AutoTipsEditorFactoryListener : EditorFactoryListener {
             }
             
             // 添加监听器，绑定到 project 的生命周期，project 关闭时自动移除
-            val project = editor.project ?: return
             editor.document.addDocumentListener(documentListener, project)
             editor.putUserData(DOCUMENT_LISTENER_KEY, documentListener)
             
@@ -117,7 +88,7 @@ class AutoTipsEditorFactoryListener : EditorFactoryListener {
             val parenOffset = event.offset + parenIndex + 1
             
             // 先检查是否是重复触发（在文档变更时立即检查）
-            if (!shouldTrigger(editor, parenOffset)) {
+            if (!TriggerDeduplicator.shouldTrigger(editor, parenOffset)) {
                 return
             }
             

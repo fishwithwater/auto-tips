@@ -44,15 +44,15 @@ class TipDisplayServiceImpl : TipDisplayService, Disposable {
     
     private val configService = com.intellij.openapi.application.ApplicationManager.getApplication().service<ConfigurationService>()
     private val errorRecoveryService = ErrorRecoveryServiceImpl()
-    private var currentBalloon: Balloon? = null
-    private var currentContent: TipsContent? = null
-    private var currentEditor: Editor? = null
-    private var currentPosition: LogicalPosition? = null
-    private var autoHideTimeoutMs: Long = 5000L
-    private var displayEnabled = true
+    @Volatile private var currentBalloon: Balloon? = null
+    @Volatile private var currentContent: TipsContent? = null
+    @Volatile private var currentEditor: Editor? = null
+    @Volatile private var currentPosition: LogicalPosition? = null
+    @Volatile private var autoHideTimeoutMs: Long = 5000L
+    @Volatile private var displayEnabled = true
     private var messageBusConnection: MessageBusConnection? = null
     private var project: Project? = null
-    private var notificationTimer: java.util.Timer? = null
+    @Volatile private var notificationTimer: java.util.Timer? = null
     
     /**
      * 初始化服务（延迟初始化）
@@ -359,13 +359,12 @@ class TipDisplayServiceImpl : TipDisplayService, Disposable {
      * 创建Markdown格式的文本面板（简化处理，转换为HTML）
      */
     private fun createMarkdownTextPane(content: String): JTextPane {
-        // 简单的Markdown到HTML转换
-        val htmlContent = content
-            .replace("\n", "<br>")
-            .replace("**", "<b>", ignoreCase = false)
-            .replace("*", "<i>", ignoreCase = false)
-        
-        return createHtmlTextPane(htmlContent)
+        var html = content
+            .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        html = Regex("""\*\*(.+?)\*\*""").replace(html) { "<b>${it.groupValues[1]}</b>" }
+        html = Regex("""\*(.+?)\*""").replace(html) { "<i>${it.groupValues[1]}</i>" }
+        html = html.replace("\n", "<br>")
+        return createHtmlTextPane(html)
     }
     
     /**

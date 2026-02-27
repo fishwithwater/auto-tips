@@ -11,15 +11,12 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
-import com.intellij.openapi.editor.event.DocumentEvent
-import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Key
+import cn.myjdemo.autotips.handler.TriggerDeduplicator
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiLiteralExpression
-import com.intellij.openapi.util.TextRange
 
 /**
  * 提示输入动作处理器实现类
@@ -34,29 +31,6 @@ class TipsTypedActionHandlerImpl : TypedHandlerDelegate(), TipsTypedActionHandle
     companion object {
         private val LOG = Logger.getInstance(TipsTypedActionHandlerImpl::class.java)
         private const val METHOD_CALL_COMPLETION_CHAR = ')'
-        private val LAST_TRIGGER_INFO_KEY = Key.create<Pair<Int, Long>>("AutoTipsLastTriggerInfo")
-        private const val DUPLICATE_TRIGGER_THRESHOLD_MS = 500L
-    }
-    
-    /**
-     * 检查是否应该触发（避免重复触发）
-     */
-    private fun shouldTrigger(editor: Editor, offset: Int): Boolean {
-        val now = System.currentTimeMillis()
-        val lastTrigger = editor.getUserData(LAST_TRIGGER_INFO_KEY)
-        
-        if (lastTrigger != null) {
-            val (lastOffset, lastTime) = lastTrigger
-            val timeDiff = now - lastTime
-            
-            if (timeDiff < DUPLICATE_TRIGGER_THRESHOLD_MS && Math.abs(offset - lastOffset) <= 1) {
-                LOG.debug("Duplicate trigger detected at offset $offset (TypedHandler), skipping")
-                return false
-            }
-        }
-        
-        editor.putUserData(LAST_TRIGGER_INFO_KEY, Pair(offset, now))
-        return true
     }
     
     /**
@@ -191,7 +165,7 @@ class TipsTypedActionHandlerImpl : TypedHandlerDelegate(), TipsTypedActionHandle
                             val offset = editor.caretModel.offset
                             
                             // 检查是否是重复触发
-                            if (!shouldTrigger(editor, offset)) {
+                            if (!TriggerDeduplicator.shouldTrigger(editor, offset)) {
                                 LOG.debug("TypedHandler trigger skipped due to duplicate detection")
                                 return@runReadAction
                             }

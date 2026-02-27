@@ -99,9 +99,9 @@ class ErrorRecoveryServiceImpl : ErrorRecoveryService {
         // 根据错误类型决定恢复动作
         return when {
             // 如果是UI相关异常，使用回退显示方式
-            exception.message?.contains("UI") == true ||
-            exception.message?.contains("Swing") == true ||
-            exception.message?.contains("AWT") == true -> {
+            exception is java.awt.HeadlessException ||
+            exception is IllegalStateException ||
+            exception.cause is java.awt.HeadlessException -> {
                 logWarning("UI error detected, using fallback display method")
                 RecoveryAction.FALLBACK
             }

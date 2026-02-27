@@ -71,8 +71,9 @@ class ConfigurationServiceImpl : ConfigurationService, PersistentStateComponent<
     }
     
     override fun setTipDisplayDuration(duration: Int) {
-        LOG.info("Setting tip display duration: $duration")
-        configuration = configuration.copy(displayDuration = duration)
+        val clamped = duration.coerceIn(500, 30_000)
+        LOG.info("Setting tip display duration: $clamped")
+        configuration = configuration.copy(displayDuration = clamped)
         notifyConfigurationChanged()
     }
     
