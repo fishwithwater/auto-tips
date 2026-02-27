@@ -39,6 +39,7 @@ class ConfigurationServiceImplTest : TestBase() {
         assertEquals("默认显示时长应该是5000毫秒", 5000, config.displayDuration)
         assertEquals("默认样式应该是BALLOON", TipStyle.BALLOON, config.style)
         assertTrue("默认自定义模式列表应该为空", config.customPatterns.isEmpty())
+        assertFalse("Javadoc模式应该默认禁用", config.javadocModeEnabled)
     }
     
     /**
@@ -171,6 +172,7 @@ class ConfigurationServiceImplTest : TestBase() {
         assertEquals("显示时长应该恢复为默认值", 5000, config.displayDuration)
         assertEquals("样式应该恢复为默认值", TipStyle.BALLOON, config.style)
         assertTrue("自定义模式列表应该为空", config.customPatterns.isEmpty())
+        assertFalse("Javadoc模式应该恢复为默认值", config.javadocModeEnabled)
     }
     
     /**

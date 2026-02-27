@@ -63,12 +63,14 @@ class ConfigurationUpdateConsistencyPropertyTest : StringSpec({
             currentConfig.displayDuration shouldBe config.displayDuration
             currentConfig.style shouldBe config.style
             currentConfig.customPatterns shouldBe config.customPatterns
+            currentConfig.javadocModeEnabled shouldBe config.javadocModeEnabled
             
             // 验证通过单独的getter方法获取的值也一致
             configService.isPluginEnabled() shouldBe config.enabled
             configService.getTipDisplayDuration() shouldBe config.displayDuration
             configService.getTipStyle() shouldBe config.style
             configService.getCustomAnnotationPatterns() shouldBe config.customPatterns
+            configService.isJavadocModeEnabled() shouldBe config.javadocModeEnabled
         }
     }
     
@@ -125,6 +127,7 @@ class ConfigurationUpdateConsistencyPropertyTest : StringSpec({
             currentConfig.displayDuration shouldBe defaultConfig.displayDuration
             currentConfig.style shouldBe defaultConfig.style
             currentConfig.customPatterns shouldBe defaultConfig.customPatterns
+            currentConfig.javadocModeEnabled shouldBe defaultConfig.javadocModeEnabled
         }
     }
     
@@ -144,6 +147,7 @@ class ConfigurationUpdateConsistencyPropertyTest : StringSpec({
                 configService.getTipDisplayDuration() shouldBe config.displayDuration
                 configService.getTipStyle() shouldBe config.style
                 configService.getCustomAnnotationPatterns() shouldBe config.customPatterns
+                configService.isJavadocModeEnabled() shouldBe config.javadocModeEnabled
             }
             
             // 验证最终状态与最后一个配置一致
@@ -191,6 +195,7 @@ private fun Arb.Companion.tipsConfiguration(): Arb<TipsConfiguration> = arbitrar
         enabled = Arb.boolean().bind(),
         displayDuration = Arb.int(100..60000).bind(),
         style = Arb.enum<TipStyle>().bind(),
-        customPatterns = Arb.list(Arb.string(1..20), 0..5).bind().distinct()
+        customPatterns = Arb.list(Arb.string(1..20), 0..5).bind().distinct(),
+        javadocModeEnabled = Arb.boolean().bind()
     )
 }

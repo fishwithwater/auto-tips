@@ -85,7 +85,7 @@ class ConcurrentCallHandlingPropertyTest : TestBase() {
                 editor.caretModel.moveToOffset(offset)
                 
                 // 立即执行处理（不等待前一个完成）
-                handler.execute(editor, ')', dataContext)
+                handler.charTyped(')', project, editor, psiFile)
                 processedCalls.incrementAndGet()
                 
                 // 只等待极短的时间（模拟快速输入）
@@ -137,7 +137,7 @@ class ConcurrentCallHandlingPropertyTest : TestBase() {
                 
                 for (offset in positions) {
                     editor.caretModel.moveToOffset(offset)
-                    handler.execute(editor, ')', dataContext)
+                    handler.charTyped(')', project, editor, psiFile)
                     Thread.sleep(10) // 快速连续输入
                 }
                 
@@ -147,7 +147,7 @@ class ConcurrentCallHandlingPropertyTest : TestBase() {
                 // 验证系统仍然正常工作（没有状态混乱）
                 // 尝试再次触发一个已知的方法
                 editor.caretModel.moveToOffset(methodWithTipsOffset)
-                handler.execute(editor, ')', dataContext)
+                handler.charTyped(')', project, editor, psiFile)
                 Thread.sleep(200)
                 
                 // 验证没有异常
@@ -184,7 +184,7 @@ class ConcurrentCallHandlingPropertyTest : TestBase() {
                     editor.caretModel.moveToOffset(offset)
                     
                     val startTime = System.nanoTime()
-                    handler.execute(editor, ')', dataContext)
+                    handler.charTyped(')', project, editor, psiFile)
                     val executionTime = (System.nanoTime() - startTime) / 1_000_000 // 毫秒
                     
                     executionTimes.add(executionTime)
@@ -232,7 +232,7 @@ class ConcurrentCallHandlingPropertyTest : TestBase() {
                     try {
                         val offset = callPositions[callIndex % callPositions.size]
                         editor.caretModel.moveToOffset(offset)
-                        handler.execute(editor, ')', dataContext)
+                        handler.charTyped(')', project, editor, psiFile)
                         successfulCalls++
                         
                         // 极短的间隔（模拟非常快速的输入）
@@ -251,7 +251,7 @@ class ConcurrentCallHandlingPropertyTest : TestBase() {
                 // 验证系统仍然响应
                 val testOffset = callPositions[0]
                 editor.caretModel.moveToOffset(testOffset)
-                handler.execute(editor, ')', dataContext)
+                handler.charTyped(')', project, editor, psiFile)
                 
                 assertTrue("System should remain responsive after high-frequency input (iteration $iteration)", true)
                 
@@ -294,7 +294,7 @@ class ConcurrentCallHandlingPropertyTest : TestBase() {
                 // 快速在不同位置之间跳转并触发
                 for (offset in selectedPositions) {
                     editor.caretModel.moveToOffset(offset)
-                    handler.execute(editor, ')', dataContext)
+                    handler.charTyped(')', project, editor, psiFile)
                     processedPositions[offset] = true
                     
                     // 极短的间隔
@@ -344,7 +344,7 @@ class ConcurrentCallHandlingPropertyTest : TestBase() {
                 
                 for (offset in positions) {
                     editor.caretModel.moveToOffset(offset)
-                    handler.execute(editor, ')', dataContext)
+                    handler.charTyped(')', project, editor, psiFile)
                     
                     // 模拟快速输入
                     Thread.sleep(8)
@@ -393,7 +393,7 @@ class ConcurrentCallHandlingPropertyTest : TestBase() {
                     editor.caretModel.moveToOffset(methodWithTipsOffset)
                     
                     // 执行处理（验证不会抛出异常）
-                    handler.execute(editor, ')', dataContext)
+                    handler.charTyped(')', project, editor, psiFile)
                     successfulExecutions++
                     detectionAttempts++
                     
@@ -442,7 +442,7 @@ class ConcurrentCallHandlingPropertyTest : TestBase() {
             repeat(50) { iteration ->
                 for (offset in callPositions) {
                     editor.caretModel.moveToOffset(offset)
-                    handler.execute(editor, ')', dataContext)
+                    handler.charTyped(')', project, editor, psiFile)
                     Thread.sleep(2)
                 }
                 
@@ -512,7 +512,7 @@ class ConcurrentCallHandlingPropertyTest : TestBase() {
                 // 快速连续触发
                 for ((offset, type) in shuffledPositions) {
                     editor.caretModel.moveToOffset(offset)
-                    handler.execute(editor, ')', dataContext)
+                    handler.charTyped(')', project, editor, psiFile)
                     
                     // 快速输入
                     Thread.sleep(7)
@@ -553,7 +553,7 @@ class ConcurrentCallHandlingPropertyTest : TestBase() {
                 for (offset in callPositions) {
                     try {
                         editor.caretModel.moveToOffset(offset)
-                        handler.execute(editor, ')', dataContext)
+                        handler.charTyped(')', project, editor, psiFile)
                         successfulExecutions++
                         
                         Thread.sleep(5)
@@ -575,7 +575,7 @@ class ConcurrentCallHandlingPropertyTest : TestBase() {
                 editor.caretModel.moveToOffset(testOffset)
                 
                 try {
-                    handler.execute(editor, ')', dataContext)
+                    handler.charTyped(')', project, editor, psiFile)
                     assertTrue("System should remain functional after concurrent processing with potential exceptions", true)
                 } catch (e: Exception) {
                     fail("System should not propagate exceptions: ${e.message}")

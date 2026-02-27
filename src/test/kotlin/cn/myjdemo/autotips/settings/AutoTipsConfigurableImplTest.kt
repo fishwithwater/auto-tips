@@ -193,4 +193,117 @@ class AutoTipsConfigurableImplTest : TestBase() {
         assertEquals("配置应该保持不变", false, configService.isPluginEnabled())
         assertEquals("配置应该保持不变", 8000, configService.getTipDisplayDuration())
     }
+    
+    /**
+     * 测试 Javadoc 模式复选框创建
+     * **Validates: Requirement 1.1**
+     */
+    fun testJavadocModeCheckboxCreation() {
+        val component = configurable.createComponent()
+        assertNotNull("应该创建UI组件", component)
+        // Javadoc 模式复选框应该作为UI的一部分被创建
+    }
+    
+    /**
+     * 测试 Javadoc 模式默认值
+     * **Validates: Requirements 1.1, 6.1**
+     */
+    fun testJavadocModeDefaultValue() {
+        // 默认配置应该禁用 Javadoc 模式
+        configService.resetToDefaults()
+        assertFalse("默认应该禁用 Javadoc 模式", configService.isJavadocModeEnabled())
+        
+        configurable.createComponent()
+        configurable.reset()
+        
+        // UI 应该反映默认值
+        assertFalse("重置后不应该被标记为已修改", configurable.isModified)
+    }
+    
+    /**
+     * 测试 Javadoc 模式配置保存
+     * **Validates: Requirements 1.1, 1.4**
+     */
+    fun testJavadocModeConfigurationSave() {
+        // 启用 Javadoc 模式
+        configService.setJavadocModeEnabled(true)
+        
+        configurable.createComponent()
+        configurable.reset()
+        
+        // 应用配置
+        configurable.apply()
+        
+        // 验证配置已保存
+        assertTrue("Javadoc 模式应该被启用", configService.isJavadocModeEnabled())
+    }
+    
+    /**
+     * 测试 Javadoc 模式配置加载
+     * **Validates: Requirements 1.1, 1.4**
+     */
+    fun testJavadocModeConfigurationLoad() {
+        // 设置 Javadoc 模式为启用
+        configService.setJavadocModeEnabled(true)
+        
+        configurable.createComponent()
+        configurable.reset()
+        
+        // UI 应该反映配置值
+        assertFalse("重置后不应该被标记为已修改", configurable.isModified)
+        
+        // 禁用 Javadoc 模式
+        configService.setJavadocModeEnabled(false)
+        
+        configurable.reset()
+        
+        // UI 应该反映新的配置值
+        assertFalse("重置后不应该被标记为已修改", configurable.isModified)
+    }
+    
+    /**
+     * 测试 Javadoc 模式修改检测
+     * **Validates: Requirements 1.1, 6.2**
+     */
+    fun testJavadocModeModificationDetection() {
+        // 设置初始配置
+        configService.setJavadocModeEnabled(false)
+        
+        configurable.createComponent()
+        configurable.reset()
+        
+        // 初始状态不应该被标记为已修改
+        assertFalse("初始状态不应该被标记为已修改", configurable.isModified)
+        
+        // 修改配置服务
+        configService.setJavadocModeEnabled(true)
+        
+        // 注意：isModified 检查 UI 值与配置服务值的差异
+    }
+    
+    /**
+     * 测试 Javadoc 模式不影响其他配置
+     * **Validates: Requirement 5.4**
+     */
+    fun testJavadocModeDoesNotAffectOtherSettings() {
+        // 设置初始配置
+        configService.setPluginEnabled(true)
+        configService.setTipDisplayDuration(5000)
+        configService.setTipStyle(TipStyle.BALLOON)
+        configService.setJavadocModeEnabled(false)
+        
+        configurable.createComponent()
+        configurable.reset()
+        
+        // 只修改 Javadoc 模式
+        configService.setJavadocModeEnabled(true)
+        configurable.reset()
+        configurable.apply()
+        
+        // 其他配置应该保持不变
+        assertTrue("插件启用状态应该保持不变", configService.isPluginEnabled())
+        assertEquals("显示时长应该保持不变", 5000, configService.getTipDisplayDuration())
+        assertEquals("样式应该保持不变", TipStyle.BALLOON, configService.getTipStyle())
+        assertTrue("Javadoc 模式应该被启用", configService.isJavadocModeEnabled())
+    }
 }

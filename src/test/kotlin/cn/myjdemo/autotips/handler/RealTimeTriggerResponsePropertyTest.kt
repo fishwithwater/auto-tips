@@ -78,7 +78,7 @@ class RealTimeTriggerResponsePropertyTest : TestBase() {
                 val startTime = System.currentTimeMillis()
                 
                 // 执行处理
-                handler.execute(editor, ')', dataContext)
+                handler.charTyped(')', project, editor, psiFile)
                 
                 // 验证处理立即返回（不阻塞）
                 val executionTime = System.currentTimeMillis() - startTime
@@ -124,7 +124,7 @@ class RealTimeTriggerResponsePropertyTest : TestBase() {
                 val startTime = System.currentTimeMillis()
                 
                 // 执行处理
-                handler.execute(editor, ')', dataContext)
+                handler.charTyped(')', project, editor, psiFile)
                 
                 // 等待提示显示或超时
                 var tipShown = false
@@ -184,7 +184,7 @@ class RealTimeTriggerResponsePropertyTest : TestBase() {
                 editor.caretModel.moveToOffset(offset)
                 
                 // 执行处理
-                handler.execute(editor, char, dataContext)
+                handler.charTyped(char, project, editor, psiFile)
                 
                 // 等待一小段时间
                 Thread.sleep(50)
@@ -227,7 +227,7 @@ class RealTimeTriggerResponsePropertyTest : TestBase() {
                 editor.caretModel.moveToOffset(offset)
                 
                 // 执行处理
-                handler.execute(editor, ')', dataContext)
+                handler.charTyped(')', project, editor, psiFile)
                 
                 // 等待
                 Thread.sleep(100)
@@ -293,7 +293,7 @@ class RealTimeTriggerResponsePropertyTest : TestBase() {
                 assertFalse("Should not handle input in comment at position $position", shouldHandle)
                 
                 // 执行处理
-                handler.execute(editor, ')', dataContext)
+                handler.charTyped(')', project, editor, psiFile)
                 
                 // 等待
                 Thread.sleep(50)
@@ -357,7 +357,7 @@ class RealTimeTriggerResponsePropertyTest : TestBase() {
                 assertFalse("Should not handle input in string at position $position", shouldHandle)
                 
                 // 执行处理
-                handler.execute(editor, ')', dataContext)
+                handler.charTyped(')', project, editor, psiFile)
                 
                 // 等待
                 Thread.sleep(50)
@@ -399,7 +399,7 @@ class RealTimeTriggerResponsePropertyTest : TestBase() {
                     editor.caretModel.moveToOffset(offset)
                     
                     // 执行处理
-                    handler.execute(editor, ')', dataContext)
+                    handler.charTyped(')', project, editor, psiFile)
                     
                     // 等待
                     Thread.sleep(100)
@@ -438,7 +438,7 @@ class RealTimeTriggerResponsePropertyTest : TestBase() {
                     editor.caretModel.moveToOffset(offset)
                     
                     // 立即执行处理（不等待）
-                    handler.execute(editor, ')', dataContext)
+                    handler.charTyped(')', project, editor, psiFile)
                     
                     // 只等待很短的时间
                     Thread.sleep(10)
@@ -476,7 +476,7 @@ class RealTimeTriggerResponsePropertyTest : TestBase() {
             
             // 测量execute方法的执行时间
             val startTime = System.nanoTime()
-            handler.execute(editor, ')', dataContext)
+            handler.charTyped(')', project, editor, psiFile)
             val executionTime = (System.nanoTime() - startTime) / 1_000_000 // 转换为毫秒
             
             // execute应该立即返回（< 50ms）

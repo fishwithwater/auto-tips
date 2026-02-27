@@ -101,7 +101,8 @@ data class TipsConfiguration(
     val enabled: Boolean = true,
     val displayDuration: Int = 5000,
     val style: TipStyle = TipStyle.BALLOON,
-    val customPatterns: List<String> = emptyList()
+    val customPatterns: List<String> = emptyList(),
+    val javadocModeEnabled: Boolean = false
 )
 
 /**

@@ -1,8 +1,10 @@
 package cn.myjdemo.autotips.service
 
 import cn.myjdemo.autotips.model.*
+import cn.myjdemo.autotips.service.TipDisplayService
 import cn.myjdemo.autotips.service.impl.TipDisplayServiceImpl
 import cn.myjdemo.autotips.TestBase
+import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.LogicalPosition
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -28,7 +30,7 @@ class NonIntrusiveDisplayPropertyTest : TestBase() {
     
     override fun setUp() {
         super.setUp()
-        displayService = TipDisplayServiceImpl()
+        displayService = project.service<TipDisplayService>() as TipDisplayServiceImpl
     }
     
     override fun tearDown() {

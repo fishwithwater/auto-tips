@@ -8,8 +8,6 @@ import cn.myjdemo.autotips.service.CallDetectionService
 import cn.myjdemo.autotips.service.AnnotationParser
 import cn.myjdemo.autotips.service.TipDisplayService
 import cn.myjdemo.autotips.service.ConfigurationService
-import com.intellij.openapi.actionSystem.DataContext
-import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.components.service
 import com.intellij.psi.PsiJavaFile
 
@@ -32,13 +30,6 @@ class TipsTypedActionHandlerImplTest : TestBase() {
         // 获取配置服务并启用插件
         configService = service<ConfigurationService>()
         configService.setPluginEnabled(true)
-    }
-    
-    /**
-     * 创建简单的DataContext用于测试
-     */
-    private fun createDataContext(): DataContext {
-        return SimpleDataContext.getProjectContext(project)
     }
     
     /**
@@ -70,12 +61,11 @@ class TipsTypedActionHandlerImplTest : TestBase() {
         configService.setPluginEnabled(false)
         
         // 配置测试文件
-        myFixture.configureByFile("TipsTestClass.java")
+        val psiFile = myFixture.configureByFile("TipsTestClass.java")
         val editor = myFixture.editor
-        val dataContext = createDataContext()
         
         // 执行处理
-        handler.execute(editor, ')', dataContext)
+        handler.charTyped(')', project, editor, psiFile)
         
         // 验证没有显示提示（因为插件被禁用）
         val tipDisplayService = project.service<TipDisplayService>()
@@ -90,7 +80,7 @@ class TipsTypedActionHandlerImplTest : TestBase() {
      */
     fun testDetectMethodCallAndShowTip() {
         // 配置测试文件
-        myFixture.configureByFile("TipsTestClass.java")
+        val psiFile = myFixture.configureByFile("TipsTestClass.java")
         val editor = myFixture.editor
         
         // 找到带有@tips注释的方法调用位置
@@ -103,8 +93,7 @@ class TipsTypedActionHandlerImplTest : TestBase() {
             editor.caretModel.moveToOffset(offset)
             
             // 执行处理
-            val dataContext = createDataContext()
-            handler.execute(editor, ')', dataContext)
+            handler.charTyped(')', project, editor, psiFile)
             
             // 等待后台任务完成
             Thread.sleep(100)
@@ -190,7 +179,6 @@ class TipsTypedActionHandlerImplTest : TestBase() {
         """.trimIndent()) as PsiJavaFile
         
         val editor = myFixture.editor
-        val dataContext = createDataContext()
         
         // 找到方法调用位置
         val text = editor.document.text
@@ -202,7 +190,7 @@ class TipsTypedActionHandlerImplTest : TestBase() {
             editor.caretModel.moveToOffset(offset)
             
             // 执行处理
-            handler.execute(editor, ')', dataContext)
+            handler.charTyped(')', project, editor, psiFile)
             
             // 等待后台任务完成
             Thread.sleep(100)
@@ -247,12 +235,11 @@ class TipsTypedActionHandlerImplTest : TestBase() {
         """.trimIndent()) as PsiJavaFile
         
         val editor = myFixture.editor
-        val dataContext = createDataContext()
         
         // 尝试在不完整的代码处执行处理
         // 应该不会抛出异常
         try {
-            handler.execute(editor, ')', dataContext)
+            handler.charTyped(')', project, editor, psiFile)
             // 如果没有抛出异常，测试通过
             assertTrue("Exception handling should prevent crashes", true)
         } catch (e: Exception) {
@@ -285,24 +272,6 @@ class TipsTypedActionHandlerImplTest : TestBase() {
             
             // 验证方法执行没有抛出异常
             assertTrue("handleMethodCallCompletion should execute without errors", true)
-        }
-    }
-    
-    /**
-     * 测试beforeCharTyped方法
-     */
-    fun testBeforeCharTyped() {
-        // 配置测试文件
-        val psiFile = myFixture.configureByFile("TipsTestClass.java") as PsiJavaFile
-        val editor = myFixture.editor
-        
-        // 调用beforeCharTyped方法
-        // 当前实现不做任何事情，但应该不抛出异常
-        try {
-            handler.beforeCharTyped(')', project, editor, psiFile)
-            assertTrue("beforeCharTyped should execute without errors", true)
-        } catch (e: Exception) {
-            fail("beforeCharTyped should not throw exceptions: ${e.message}")
         }
     }
     

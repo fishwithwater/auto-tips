@@ -79,4 +79,16 @@ interface ConfigurationService {
      * @param pattern 注释模式
      */
     fun removeCustomAnnotationPattern(pattern: String)
+    
+    /**
+     * 检查是否启用 Javadoc 模式
+     * @return 是否启用 Javadoc 模式
+     */
+    fun isJavadocModeEnabled(): Boolean
+    
+    /**
+     * 设置 Javadoc 模式启用状态
+     * @param enabled 是否启用
+     */
+    fun setJavadocModeEnabled(enabled: Boolean)
 }

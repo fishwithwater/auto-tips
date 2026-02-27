@@ -19,8 +19,9 @@ class AutoTipsConfigurableImpl : AutoTipsConfigurable {
     private var enabledCheckBox: JBCheckBox? = null
     private var displayDurationField: JBTextField? = null
     private var styleComboBox: JComboBox<TipStyle>? = null
+    private var javadocModeCheckBox: JBCheckBox? = null
     
-    private val configService = service<ConfigurationService>()
+    private val configService = com.intellij.openapi.application.ApplicationManager.getApplication().service<ConfigurationService>()
     
     override fun getDisplayName(): String = "Auto-Tips"
     
@@ -38,17 +39,20 @@ class AutoTipsConfigurableImpl : AutoTipsConfigurable {
         
         return enabledCheckBox?.isSelected != currentConfig.enabled ||
                 displayDurationField?.text?.toIntOrNull() != currentConfig.displayDuration ||
-                styleComboBox?.selectedItem != currentConfig.style
+                styleComboBox?.selectedItem != currentConfig.style ||
+                javadocModeCheckBox?.isSelected != currentConfig.javadocModeEnabled
     }
     
     override fun apply() {
         val enabled = enabledCheckBox?.isSelected ?: true
         val duration = displayDurationField?.text?.toIntOrNull() ?: 5000
         val style = styleComboBox?.selectedItem as? TipStyle ?: TipStyle.BALLOON
+        val javadocMode = javadocModeCheckBox?.isSelected ?: false
         
         configService.setPluginEnabled(enabled)
         configService.setTipDisplayDuration(duration)
         configService.setTipStyle(style)
+        configService.setJavadocModeEnabled(javadocMode)
     }
     
     override fun reset() {
@@ -57,6 +61,7 @@ class AutoTipsConfigurableImpl : AutoTipsConfigurable {
         enabledCheckBox?.isSelected = currentConfig.enabled
         displayDurationField?.text = currentConfig.displayDuration.toString()
         styleComboBox?.selectedItem = currentConfig.style
+        javadocModeCheckBox?.isSelected = currentConfig.javadocModeEnabled
     }
     
     override fun disposeUIResources() {
@@ -64,6 +69,7 @@ class AutoTipsConfigurableImpl : AutoTipsConfigurable {
         enabledCheckBox = null
         displayDurationField = null
         styleComboBox = null
+        javadocModeCheckBox = null
     }
     
     /**
@@ -73,11 +79,13 @@ class AutoTipsConfigurableImpl : AutoTipsConfigurable {
         enabledCheckBox = JBCheckBox("启用 Auto-Tips 插件")
         displayDurationField = JBTextField()
         styleComboBox = JComboBox(TipStyle.values())
+        javadocModeCheckBox = JBCheckBox("显示 Javadoc 而非 @tips")
         
         mainPanel = FormBuilder.createFormBuilder()
             .addComponent(enabledCheckBox!!)
             .addLabeledComponent("提示显示时长 (毫秒):", displayDurationField!!)
             .addLabeledComponent("提示样式:", styleComboBox!!)
+            .addComponent(javadocModeCheckBox!!)
             .addComponentFillVertically(JPanel(), 0)
             .panel
         

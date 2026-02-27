@@ -23,7 +23,7 @@ class AutoTipsApplicationLifecycleListener : AppLifecycleListener {
      * 
      * 需求 7.4: 在3秒内完成初始化
      */
-    override fun appStarted() {
+    override fun appFrameCreated(commandLineArgs: List<String>) {
         try {
             LOG.info("Auto-Tips plugin application lifecycle started")
             // 应用级别的初始化（如果需要）

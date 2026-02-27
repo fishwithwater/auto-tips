@@ -19,7 +19,7 @@ import com.intellij.psi.javadoc.PsiDocTag
  */
 class JavaLanguageParser : LanguageSpecificParser {
     
-    private val configService = service<ConfigurationService>()
+    private val configService = com.intellij.openapi.application.ApplicationManager.getApplication().service<ConfigurationService>()
     
     companion object {
         private const val TIPS_TAG = "tips"

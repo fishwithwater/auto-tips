@@ -31,7 +31,7 @@ import com.intellij.psi.javadoc.PsiDocTag
  */
 class AnnotationParserImpl : AnnotationParser {
     
-    private val configService = service<ConfigurationService>()
+    private val configService = com.intellij.openapi.application.ApplicationManager.getApplication().service<ConfigurationService>()
     private val errorRecoveryService = ErrorRecoveryServiceImpl()
     
     // 语言特定解析器列表

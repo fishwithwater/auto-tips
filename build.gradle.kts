@@ -37,8 +37,8 @@ dependencies {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "242"
-            untilBuild = provider { null }
+            sinceBuild = "241"
+            untilBuild = "243.*"
         }
 
         changeNotes = """
@@ -52,6 +52,7 @@ intellijPlatform {
                 <li>实现智能缓存机制提升性能</li>
                 <li>支持解析外部依赖库中的 @tips 注释</li>
                 <li>完善的错误处理和恢复机制</li>
+                <li>修复兼容性问题，支持更广泛的IDE版本</li>
             </ul>
         """.trimIndent()
     }
