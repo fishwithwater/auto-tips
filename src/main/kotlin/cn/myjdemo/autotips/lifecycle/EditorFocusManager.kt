@@ -87,9 +87,9 @@ class EditorFocusManager(private val project: Project) : FileEditorManagerListen
                 return
             }
             
-            // 创建并注册监听器
+            // 创建并注册监听器，绑定到 project 的生命周期，project 关闭时自动移除
             val listener = AutoCompletionDocumentListener(editor)
-            editor.document.addDocumentListener(listener)
+            editor.document.addDocumentListener(listener, project)
             editor.putUserData(DOCUMENT_LISTENER_KEY, listener)
             
             LOG.info("Successfully registered document listener for editor: ${editor.document.hashCode()}")
