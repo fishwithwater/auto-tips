@@ -78,12 +78,8 @@ class AutoTipsEditorFactoryListener : EditorFactoryListener {
             }
             
             // 添加监听器，绑定到 project 的生命周期，project 关闭时自动移除
-            val project = editor.project
-            if (project != null) {
-                editor.document.addDocumentListener(documentListener, project)
-            } else {
-                editor.document.addDocumentListener(documentListener)
-            }
+            val project = editor.project ?: return
+            editor.document.addDocumentListener(documentListener, project)
             editor.putUserData(DOCUMENT_LISTENER_KEY, documentListener)
             
             LOG.info("Added document listener to editor: ${editor.document.hashCode()}")
