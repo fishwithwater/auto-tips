@@ -224,17 +224,21 @@ class ConfigurationServiceImplTest : TestBase() {
      * **Validates: Requirement 6.2**
      */
     fun testDisplayDurationBoundaryValues() {
-        // 测试最小值
+        // 0 应该被 clamp 到最小值 500
         configService.setTipDisplayDuration(0)
-        assertEquals("应该接受0作为显示时长", 0, configService.getTipDisplayDuration())
-        
-        // 测试较大值
+        assertEquals("0应该被限制到最小值500", 500, configService.getTipDisplayDuration())
+
+        // 正常值应该被接受
+        configService.setTipDisplayDuration(5000)
+        assertEquals("5000应该被接受", 5000, configService.getTipDisplayDuration())
+
+        // 超过最大值应该被 clamp 到 30000
         configService.setTipDisplayDuration(60000)
-        assertEquals("应该接受60000作为显示时长", 60000, configService.getTipDisplayDuration())
-        
-        // 测试负值（虽然不推荐，但应该能设置）
+        assertEquals("60000应该被限制到最大值30000", 30000, configService.getTipDisplayDuration())
+
+        // 负值应该被 clamp 到最小值 500
         configService.setTipDisplayDuration(-1)
-        assertEquals("应该能设置负值", -1, configService.getTipDisplayDuration())
+        assertEquals("负值应该被限制到最小值500", 500, configService.getTipDisplayDuration())
     }
     
     /**

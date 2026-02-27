@@ -126,7 +126,7 @@ class ErrorRecoveryServiceTest {
      */
     @Test
     fun testHandleUIRelatedError() {
-        val exception = RuntimeException("Swing component error")
+        val exception = IllegalStateException("component not on EDT")
         val content = TipsContent(
             content = "Test tips content",
             format = TipsFormat.PLAIN_TEXT
