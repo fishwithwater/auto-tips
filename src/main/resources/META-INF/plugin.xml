@@ -13,33 +13,36 @@
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description><![CDATA[
+    <p>Auto-Tips is an intelligent, non-intrusive code hint plugin. When developers call APIs or methods marked with <code>@tips</code> annotations, 
+    the plugin automatically displays relevant hint information to help developers better understand and use the code without interrupting their normal coding workflow.</p>
+    
     <p>Auto-Tips 是一个智能的、非中断式的代码提示插件。当开发者调用带有 <code>@tips</code> 注释标记的 API 或方法时，
     插件会自动显示相关提示信息，帮助开发者更好地理解和使用代码，而不会中断其正常的编码流程。</p>
     
-    <h3>主要功能</h3>
+    <h3>Key Features / 主要功能</h3>
     <ul>
-        <li><strong>智能提示显示</strong>：在输入方法调用的右括号时自动显示提示</li>
-        <li><strong>非中断式设计</strong>：提示以非模态弹窗显示，不阻塞代码编辑</li>
-        <li><strong>多语言支持</strong>：支持 Java 和 Kotlin</li>
-        <li><strong>多种触发方式</strong>：手动输入、IDE 自动补全、输入法自动补全</li>
-        <li><strong>自定义 Javadoc 标签</strong>：<code>@tips</code> 标签支持代码补全和语法高亮</li>
-        <li><strong>智能缓存</strong>：LRU 缓存策略提升性能</li>
-        <li><strong>灵活配置</strong>：可自定义提示显示时长、样式等</li>
-        <li><strong>外部依赖支持</strong>：可解析第三方库中的 <code>@tips</code> 注释</li>
+        <li><strong>Smart Hint Display</strong>: Automatically shows hints when typing closing parenthesis / <strong>智能提示显示</strong>：在输入方法调用的右括号时自动显示提示</li>
+        <li><strong>Non-Intrusive Design</strong>: Hints displayed as non-modal popups without blocking code editing / <strong>非中断式设计</strong>：提示以非模态弹窗显示，不阻塞代码编辑</li>
+        <li><strong>Multi-Language Support</strong>: Supports Java and Kotlin / <strong>多语言支持</strong>：支持 Java 和 Kotlin</li>
+        <li><strong>Multiple Trigger Methods</strong>: Manual input, IDE auto-completion, IME auto-completion / <strong>多种触发方式</strong>：手动输入、IDE 自动补全、输入法自动补全</li>
+        <li><strong>Custom Javadoc Tag</strong>: <code>@tips</code> tag with code completion and syntax highlighting / <strong>自定义 Javadoc 标签</strong>：<code>@tips</code> 标签支持代码补全和语法高亮</li>
+        <li><strong>Smart Caching</strong>: LRU cache strategy for better performance / <strong>智能缓存</strong>：LRU 缓存策略提升性能</li>
+        <li><strong>Flexible Configuration</strong>: Customizable hint display duration and styles / <strong>灵活配置</strong>：可自定义提示显示时长、样式等</li>
+        <li><strong>External Dependencies Support</strong>: Parse <code>@tips</code> annotations from third-party libraries / <strong>外部依赖支持</strong>：可解析第三方库中的 <code>@tips</code> 注释</li>
     </ul>
     
-    <h3>使用示例</h3>
+    <h3>Usage Example / 使用示例</h3>
     <pre><code>
 /**
- * 执行数据库查询
- * @tips 这是一个耗时操作，建议在后台线程中调用
- * @tips 返回值可能为 null，请进行空值检查
+ * Execute database query
+ * @tips This is a time-consuming operation, recommend calling in background thread
+ * @tips Return value may be null, please check for null
  */
 public ResultSet executeQuery(String query) {
-    // 实现代码
+    // Implementation
 }
 
-// 调用时自动显示提示
+// Hint will be displayed automatically when calling
 ResultSet result = executeQuery("SELECT * FROM users");
     </code></pre>
   ]]></description>
@@ -63,7 +66,7 @@ ResultSet result = executeQuery("SELECT * FROM users");
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.java</depends>
-    <depends>org.jetbrains.kotlin</depends>
+    <depends optional="true" config-file="kotlin-support.xml">org.jetbrains.kotlin</depends>
 
     <!-- Application lifecycle listener -->
     <applicationListeners>
@@ -77,8 +80,11 @@ ResultSet result = executeQuery("SELECT * FROM users");
         <!-- Editor factory listener for handling auto-completion scenarios -->
         <editorFactoryListener implementation="cn.myjdemo.autotips.lifecycle.AutoTipsEditorFactoryListener"/>
         
-        <!-- Project lifecycle listener for initialization and cleanup -->
-        <projectListener implementation="cn.myjdemo.autotips.lifecycle.AutoTipsProjectLifecycleListener"/>
+        <!-- Project startup activity for initialization -->
+        <postStartupActivity implementation="cn.myjdemo.autotips.lifecycle.AutoTipsProjectLifecycleListener"/>
+        
+        <!-- Project manager listener for cleanup -->
+        <projectListener implementation="cn.myjdemo.autotips.lifecycle.AutoTipsProjectCloseListener"/>
         <!-- Application services -->
         <applicationService serviceInterface="cn.myjdemo.autotips.service.ConfigurationService"
                            serviceImplementation="cn.myjdemo.autotips.service.impl.ConfigurationServiceImpl"/>
@@ -88,6 +94,8 @@ ResultSet result = executeQuery("SELECT * FROM users");
                        serviceImplementation="cn.myjdemo.autotips.service.impl.CallDetectionServiceImpl"/>
         <projectService serviceInterface="cn.myjdemo.autotips.service.AnnotationParser"
                        serviceImplementation="cn.myjdemo.autotips.service.impl.AnnotationParserImpl"/>
+        <projectService serviceInterface="cn.myjdemo.autotips.service.JavadocExtractor"
+                       serviceImplementation="cn.myjdemo.autotips.service.impl.JavadocExtractorImpl"/>
         <projectService serviceInterface="cn.myjdemo.autotips.service.TipDisplayService"
                        serviceImplementation="cn.myjdemo.autotips.service.impl.TipDisplayServiceImpl"/>
         <projectService serviceInterface="cn.myjdemo.autotips.service.CacheService"

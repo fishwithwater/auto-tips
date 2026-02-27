@@ -1,9 +1,8 @@
 <idea-plugin>
-    <extensions defaultExtensionNs="com.intellij">
-        <!-- Kotlin-specific extensions -->
-        <org.jetbrains.kotlin.supportsKotlinPluginMode supportsKotlinPluginMode="k2"/>
-        
+    <extensions defaultExtensionNs="org.jetbrains.kotlin">
+        <supportsKotlinPluginMode supportsK1="true" supportsK2="true"/>
+
         <!-- KDoc tag support for @tips -->
-        <org.jetbrains.kotlin.kdocTagInfo implementation="cn.myjdemo.autotips.javadoc.TipsKDocTagInfo"/>
+        <kdocTagInfo implementation="cn.myjdemo.autotips.javadoc.TipsKDocTagInfo"/>
     </extensions>
 </idea-plugin>
